@@ -12,3 +12,6 @@ export 'src/model/polar_recording.dart';
 export 'src/model/polar_sensor_setting.dart';
 export 'src/model/polar_charge_state.dart';
 export 'src/model/polar_streaming.dart';
+export 'src/model/polar_offline_recording_data.dart';
+export 'src/model/polar_offline_recording_trigger.dart';
+export 'src/model/polar_offline_recording_entry.dart';

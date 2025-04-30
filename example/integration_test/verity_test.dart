@@ -5,7 +5,7 @@ import 'package:polar/polar.dart';
 
 import '../../test/tests.dart';
 
-const identifier = 'AE0F8E27';
+const identifier = 'D7C70D2C';
 
 void main() async {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +36,8 @@ void main() async {
       PolarDataType.magnetometer,
     },
   );
+  testOfflineRecordingList(identifier);
+  testOfflineRecordingFetch(identifier);
   testSdkMode(identifier);
   testMisc(identifier, supportsLedConfig: true);
 }
