@@ -29,7 +29,6 @@ class Polar {
   factory Polar({bool bluetoothScanNeverForLocation = true}) =>
       _instance ??= Polar._(bluetoothScanNeverForLocation);
 
-<<<<<<< HEAD
   late final _eventStream = _eventChannel
       .receiveBroadcastStream(identityHashCode(this))
       .map((e) => (e as Map).cast<String, dynamic>())
@@ -103,67 +102,6 @@ class Polar {
               PolarChargeState.fromJson(e.data[1]),
             ),
           );
-=======
-  Future<void> _handleMethodCall(MethodCall call) async {
-    switch (call.method) {
-      case 'blePowerStateChanged':
-        _blePowerState.add(call.arguments);
-        return;
-      case 'sdkFeatureReady':
-        _sdkFeatureReady.add(
-          PolarSdkFeatureReadyEvent(
-            call.arguments[0],
-            PolarSdkFeature.fromJson(call.arguments[1]),
-          ),
-        );
-        return;
-      case 'deviceConnected':
-        _deviceConnected
-            .add(PolarDeviceInfo.fromJson(jsonDecode(call.arguments)));
-        return;
-      case 'deviceConnecting':
-        _deviceConnecting
-            .add(PolarDeviceInfo.fromJson(jsonDecode(call.arguments)));
-        return;
-      case 'deviceDisconnected':
-        _deviceDisconnected.add(
-          PolarDeviceDisconnectedEvent(
-            PolarDeviceInfo.fromJson(jsonDecode(call.arguments[0])),
-            call.arguments[1],
-          ),
-        );
-        return;
-      case 'disInformationReceived':
-        _disInformation.add(
-          PolarDisInformationEvent(
-            call.arguments[0],
-            call.arguments[1],
-            call.arguments[2],
-          ),
-        );
-        return;
-      case 'batteryLevelReceived':
-        _batteryLevel.add(
-          PolarBatteryLevelEvent(
-            call.arguments[0],
-            call.arguments[1],
-          ),
-        );
-        return;
-      case 'offlineRecordingTriggerSet':
-        try {
-          await setOfflineRecordingTrigger(
-            call.arguments[0],
-          );
-        } catch (e) {
-          throw Exception('Failed to set offline recording trigger: $e');
-        }
-        return;
-      default:
-        throw UnimplementedError(call.method);
-    }
-  }
->>>>>>> offline-streaming/features_offline_support
 
   /// Start searching for Polar device(s)
   ///
@@ -226,7 +164,7 @@ class Polar {
     String identifier,
     PolarDataType feature,
   ) async {
-    final response = await _channel.invokeMethod(
+    final response = await _methodChannel.invokeMethod(
       'requestOfflineRecordingSettings',
       [identifier, feature.toJson()],
     );
@@ -244,14 +182,13 @@ class Polar {
   ///   - completed :  offline recording is started successfully
   ///   - error: see `PolarErrors` for possible errors invoked
   ///
-
   Future<void> startOfflineRecording(
     String identifier,
     PolarDataType feature, {
     PolarSensorSetting? settings,
     String? secret,
   }) {
-    return _channel.invokeMethod(
+    return _methodChannel.invokeMethod(
       'startOfflineRecording',
       [identifier, feature.toJson(), jsonEncode(settings), secret],
     );
@@ -270,7 +207,7 @@ class Polar {
     String identifier,
     PolarDataType feature,
   ) {
-    return _channel.invokeMethod(
+    return _methodChannel.invokeMethod(
       'stopOfflineRecording',
       [identifier, feature.toJson()],
     );
@@ -287,8 +224,10 @@ class Polar {
   Future<List<PolarOfflineRecordingEntry>> listOfflineRecords(
     String identifier,
   ) async {
-    final result =
-        await _channel.invokeListMethod('listOfflineRecordings', identifier);
+    final result = await _methodChannel.invokeListMethod(
+      'listOfflineRecordings',
+      identifier,
+    );
     if (result == null) {
       return [];
     }
@@ -309,7 +248,8 @@ class Polar {
   ///   - error: the offline recording trigger was not set successfully
   Future<void> setOfflineRecordingTrigger(String identifier) async {
     try {
-      await _channel.invokeMethod('setOfflineRecordingTrigger', [identifier]);
+      await _methodChannel
+          .invokeMethod('setOfflineRecordingTrigger', [identifier]);
     } on PlatformException catch (e) {
       throw Exception(
         'Failed to set offline recording trigger: ${e.message} ${e.details}',
@@ -329,8 +269,10 @@ class Polar {
     String identifier,
   ) async {
     try {
-      final String jsonString =
-          await _channel.invokeMethod('listOfflineRecordings', identifier);
+      final String jsonString = await _methodChannel.invokeMethod(
+        'listOfflineRecordings',
+        identifier,
+      );
       final List<dynamic> jsonResponse = jsonDecode(jsonString);
       return jsonResponse
           .map(
@@ -353,13 +295,12 @@ class Polar {
   /// - Returns: Single stream
   ///   - success: the offline recording data
   ///   - error: see `PolarErrors` for possible errors invoked
-
   Future<PolarOfflineRecordingData> fetchOfflineRecording(
     String identifier,
     PolarOfflineRecordingEntry entry,
   ) async {
     try {
-      final String jsonString = await _channel.invokeMethod(
+      final String jsonString = await _methodChannel.invokeMethod(
         'fetchOfflineRecording',
         [identifier, jsonEncode(entry.toJson())],
       );
@@ -380,13 +321,12 @@ class Polar {
   /// - Returns: Completable
   ///   - completed :  offline recording is removed successfully
   ///   - error: see `PolarErrors` for possible errors invoked
-
   Future<void> removeOfflineRecord(
     String identifier,
     PolarOfflineRecordingEntry entry,
   ) async {
     try {
-      await _channel.invokeMethod(
+      await _methodChannel.invokeMethod(
         'removeOfflineRecording',
         [identifier, jsonEncode(entry.toJson())],
       );
@@ -394,6 +334,25 @@ class Polar {
       throw Exception('Failed to remove offline recording: ${e.message}');
     } catch (e) {
       throw Exception('Failed to remove data: ${e.toString()}');
+    }
+  }
+
+  /// Fetches the available and used disk space on a Polar device.
+  ///
+  /// - Parameters:
+  ///   - identifier: Polar device id or address.
+  /// - Returns: A list with two integers: available space and total space (in bytes).
+  ///   - success: Returns a list containing the available and total space.
+  ///   - onError: Possible errors are returned as exceptions.
+  Future<List<int>> getDiskSpace(String identifier) async {
+    try {
+      final result = await _methodChannel.invokeMethod<List<dynamic>>(
+        'getDiskSpace',
+        identifier,
+      );
+      return result?.map((e) => e as int).toList() ?? [];
+    } on PlatformException catch (e) {
+      throw Exception('Error: ${e.message}');
     }
   }
 
@@ -816,24 +775,5 @@ class Polar {
     final result =
         await _methodChannel.invokeMethod<bool>('isSdkModeEnabled', identifier);
     return result!;
-  }
-
-  /// Fetches the available and used disk space on a Polar device.
-  ///
-  /// - Parameters:
-  ///   - identifier: Polar device id or address.
-  /// - Returns: A list with two integers: available space and total space (in bytes).
-  ///   - success: Returns a list containing the available and total space.
-  ///   - onError: Possible errors are returned as exceptions.
-  Future<List<int>> getDiskSpace(String identifier) async {
-    try {
-      final result = await _channel.invokeMethod<List<dynamic>>(
-        'getDiskSpace',
-        identifier,
-      );
-      return result?.map((e) => e as int).toList() ?? [];
-    } on PlatformException catch (e) {
-      throw Exception('Error: ${e.message}');
-    }
   }
 }
