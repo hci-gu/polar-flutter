@@ -115,7 +115,8 @@ public class SwiftPolarPlugin:
 
       case "fetchOfflineRecording":
                 fetchOfflineRecord(call, result)
-
+      case "getDiskSpace":
+                getDiskSpace(call, result)
       case "stopOfflineRecording":
                 stopOfflineRecording(call, result)
       //setOfflineRecordingTrigger with hardcoded settings
@@ -361,6 +362,21 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
             )
     }
 
+    func getDiskSpace(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        let identifier = call.arguments as! String
+
+        _ = api.getDiskSpace(identifier).subscribe(
+            onSuccess: { data in
+                let diskSpaceInfo = [
+                    data.freeSpace,
+                    data.totalSpace
+                ]
+                result(diskSpaceInfo)
+            },
+            onFailure: { error in
+                result(FlutterError(code: "Error getting disk space", message: error.localizedDescription, details: nil))
+            })
+    }
       
     func fetchOfflineRecord(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         let arguments = call.arguments as! [Any]

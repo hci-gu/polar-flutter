@@ -15,7 +15,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  static const identifier = 'D7C70D2C';
+  static const identifier = '00B94D3C';
 
   final polar = Polar();
   final logs = ['Service started'];
@@ -91,7 +91,9 @@ class _MyAppState extends State<MyApp> {
           actions: [
             PopupMenuButton(
               itemBuilder: (context) => RecordingAction.values
-                  .map((e) => PopupMenuItem(value: e, child: Text(e.name)))
+                  .map(
+                    (e) => PopupMenuItem(value: e, child: Text(e.name)),
+                  )
                   .toList(),
               onSelected: handleRecordingAction,
               child: const IconButton(
@@ -167,9 +169,8 @@ class _MyAppState extends State<MyApp> {
                                   log('Fetched recording data: ${res.toString()}');
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => OfflineDataWidget(
-                                        data: res,
-                                      ),
+                                      builder: (context) =>
+                                          OfflineDataWidget(data: res),
                                     ),
                                   );
                                 },
@@ -196,8 +197,9 @@ class _MyAppState extends State<MyApp> {
           e.identifier == identifier &&
           e.feature == PolarSdkFeature.onlineStreaming,
     );
-    final availabletypes =
-        await polar.getAvailableOnlineStreamDataTypes(identifier);
+    final availabletypes = await polar.getAvailableOnlineStreamDataTypes(
+      identifier,
+    );
 
     debugPrint('available types: $availabletypes');
 
@@ -276,14 +278,7 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-enum RecordingAction {
-  start,
-  stop,
-  status,
-  list,
-  fetch,
-  remove,
-}
+enum RecordingAction { start, stop, status, list, fetch, remove }
 
 class OfflineDataWidget extends StatelessWidget {
   final PolarOfflineRecordingData data;
