@@ -99,30 +99,29 @@ public class SwiftPolarPlugin:
         result(nil)
       case "getAvailableOnlineStreamDataTypes":
         getAvailableOnlineStreamDataTypes(call, result)
-
+      case "getAvailableOfflineRecordingDataTypes":
+        getAvailableOfflineRecordingDataTypes(call, result)
       case "requestOfflineRecordingSettings":
-                try requestOfflineRecordingSettings(call, result)
+        try requestOfflineRecordingSettings(call, result)
       case "requestStreamSettings":
         try requestStreamSettings(call, result)
       case "createStreamingChannel":
         createStreamingChannel(call, result)
-
       case "listOfflineRecordings":
-                listOfflineRecordings(call,result)
-
+        listOfflineRecordings(call,result)
       case "removeOfflineRecording":
-                removeOfflineRecord(call, result)
-
+        removeOfflineRecord(call, result)
       case "fetchOfflineRecording":
-                fetchOfflineRecord(call, result)
+        fetchOfflineRecord(call, result)
       case "getDiskSpace":
-                getDiskSpace(call, result)
+        getDiskSpace(call, result)
       case "stopOfflineRecording":
-                stopOfflineRecording(call, result)
+        stopOfflineRecording(call, result)
       //setOfflineRecordingTrigger with hardcoded settings
       case "setOfflineRecordingTrigger":
-                setOfflineRecordingTrigger(call, result)
+        setOfflineRecordingTrigger(call, result)
       case "startRecording":
+        print("Swift.startRecording")
         startRecording(call, result)
       case "stopRecording":
         stopRecording(call, result)
@@ -211,6 +210,28 @@ public class SwiftPolarPlugin:
     }
 
     result(nil)
+  }
+
+  func getAvailableOfflineRecordingDataTypes(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    let identifier = call.arguments as! String
+
+    _ = api.getAvailableOfflineRecordingDataTypes(identifier).subscribe(
+      onSuccess: { data in
+        guard let data = jsonEncode(data.map { PolarDeviceDataType.allCases.firstIndex(of: $0)! })
+        else {
+          result(
+            FlutterError(
+              code: "Unable to get available offline recording data types", message: nil, details: nil))
+          return
+        }
+        result(data)
+      },
+      onFailure: {
+        result(
+          FlutterError(
+            code: "Unable to get available offline recording data types",
+            message: $0.localizedDescription, details: nil))
+      })
   }
 
   func getAvailableOnlineStreamDataTypes(
@@ -347,6 +368,7 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
                 onSuccess: { entries in
                     let entriesCodable = entries.map { PolarOfflineRecordingEntryCodable($0) }
                     do {
+                        
                         let encoder = JSONEncoder()
                         encoder.dateEncodingStrategy = .millisecondsSince1970
                         let data = try encoder.encode(entriesCodable)
@@ -361,6 +383,8 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
                 }
             )
     }
+    
+    
 
     func getDiskSpace(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         let identifier = call.arguments as! String
@@ -441,7 +465,33 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
     let interval = RecordingInterval(rawValue: arguments[2] as! Int)!
     let sampleType = SampleType(rawValue: arguments[3] as! Int)!
 
-    _ = api.startRecording(
+    print("Swift.startRecording")
+    print("identifier: \(identifier)")
+    print("exerciseId: \(exerciseId)")
+    print("interval: \(interval)")
+    print("sampleType: \(sampleType)")
+      
+    
+    let _settings = PolarSensorSetting.init([
+        PolarSensorSetting.SettingType.sampleRate : 52,
+        PolarSensorSetting.SettingType.resolution: 16,
+        PolarSensorSetting.SettingType.range: 8,
+        PolarSensorSetting.SettingType.channels: 3,
+    ])
+      
+      
+      _ = api.startOfflineRecording(identifier, feature: PolarDeviceDataType.acc, settings: _settings, secret: nil)
+      .subscribe(
+        onCompleted: {
+          result(nil)
+        },
+        onError: { error in
+          result(
+            FlutterError(
+              code: "Error starting recording", message: error.localizedDescription, details: nil))
+        })
+
+    /*_ = api.startRecording(
       identifier,
       exerciseId: exerciseId,
       interval: interval,
@@ -454,13 +504,14 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
         result(
           FlutterError(
             code: "Error starting recording", message: error.localizedDescription, details: nil))
-      })
+      })*/
   }
 
   func stopRecording(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
     let identifier = call.arguments as! String
-
-    _ = api.stopRecording(identifier).subscribe(
+      
+    _ = api.stopOfflineRecording(identifier, feature: PolarDeviceDataType.acc)
+      .subscribe(
       onCompleted: {
         result(nil)
       },
@@ -472,11 +523,15 @@ func setOfflineRecordingTrigger(_ call: FlutterMethodCall, _ result: @escaping F
   }
 
   func requestRecordingStatus(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-    let identifier = call.arguments as! String
-
-    _ = api.requestRecordingStatus(identifier).subscribe(
+      let arguments = call.arguments as! [Any]
+      let identifier = arguments[0] as! String
+      let dataType = arguments[1] as! String
+      
+      let dataKey = PolarDeviceDataType.acc
+      
+    _ = api.getOfflineRecordingStatus(identifier).subscribe(
       onSuccess: { data in
-        result([data.ongoing, data.entryId])
+          result([data[dataKey]])
       },
       onFailure: { error in
         result(

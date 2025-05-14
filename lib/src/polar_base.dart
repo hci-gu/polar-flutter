@@ -364,6 +364,24 @@ class Polar {
     return _methodChannel.invokeMethod('disconnectFromDevice', identifier);
   }
 
+  ///  Get the data types available in this device for offline recording
+  ///
+  /// - Parameters:
+  ///   - identifier: polar device id
+  /// - Returns: Single stream
+  ///   - success: set of available online streaming data types in this device
+  ///   - onError: see `PolarErrors` for possible errors invoked
+  Future<Set<PolarDataType>> getAvailableOfflineRecordingDataTypes(
+    String identifier,
+  ) async {
+    final response = await _methodChannel.invokeMethod(
+      'getAvailableOfflineRecordingDataTypes',
+      identifier,
+    );
+    if (response == null) return {};
+    return (jsonDecode(response) as List).map(PolarDataType.fromJson).toSet();
+  }
+
   ///  Get the data types available in this device for online streaming
   ///
   /// - Parameters:
@@ -669,13 +687,16 @@ class Polar {
   /// - Returns: Single stream
   ///   - success: see `PolarRecordingStatus`
   ///   - onError: see `PolarErrors` for possible errors invoked
-  Future<PolarRecordingStatus> requestRecordingStatus(String identifier) async {
+  Future<bool> requestRecordingStatus(
+    String identifier,
+    String dataType,
+  ) async {
     final result = await _methodChannel.invokeListMethod(
       'requestRecordingStatus',
-      identifier,
+      [identifier, dataType],
     );
 
-    return PolarRecordingStatus(ongoing: result![0], entryId: result[1]);
+    return result?[0] ?? false;
   }
 
   /// Api for fetching stored exercises list from Polar H10 device. Requires `polarFileTransfer` feature. This API is working for Polar OH1 and Polar Verity Sense devices too, however in those devices recording of exercise requires that sensor is registered to Polar Flow account.
