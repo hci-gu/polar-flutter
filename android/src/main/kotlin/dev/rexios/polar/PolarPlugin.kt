@@ -336,12 +336,19 @@ class PolarPlugin :
         call: MethodCall,
         result: Result,
     ) {
-        val identifier = call.arguments as String
+        val arguments = call.arguments as List<*>
+        val identifier = arguments[0] as String
+        val dataType = arguments[1] as String
+
+        val dataKey = PolarDeviceDataType.ACC
 
         wrapper.api
             .requestRecordingStatus(identifier)
             .subscribe({
-                runOnUiThread { result.success(listOf(it.first, it.second)) }
+                runOnUiThread { 
+                    val recordingStatus = it[dataKey]
+                    result.success(recordingStatus)
+                }
             }, {
                 runOnUiThread {
                     result.error(it.toString(), it.message, null)
@@ -687,9 +694,9 @@ class PolarPlugin :
         wrapper.api
             .getDiskSpace(identifier)
             .subscribe({
-                val (availableSpace, totalSpace) = it
+                val (freeSpace, totalSpace) = it
                 runOnUiThread {
-                    result.success(listOf(availableSpace, totalSpace))
+                    result.success(listOf(freeSpace, totalSpace))
                 }
             }, {
                 runOnUiThread {
