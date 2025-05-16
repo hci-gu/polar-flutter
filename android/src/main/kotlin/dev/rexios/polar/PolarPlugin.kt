@@ -340,7 +340,7 @@ class PolarPlugin :
         val identifier = arguments[0] as String
         val dataType = arguments[1] as String
 
-        val dataKey = PolarDeviceDataType.ACC
+        val dataKey = PolarDeviceDataType.ACC.ordinal
 
         wrapper.api
             .getOfflineRecordingStatus(identifier)
