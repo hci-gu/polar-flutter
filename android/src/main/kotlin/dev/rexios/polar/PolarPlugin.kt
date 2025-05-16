@@ -345,9 +345,8 @@ class PolarPlugin :
         wrapper.api
             .requestRecordingStatus(identifier)
             .subscribe({
-                runOnUiThread { 
-                    val recordingStatus = it[dataKey]
-                    result.success(recordingStatus)
+                runOnUiThread {
+                    result.success(listOf(it[dataKey]))
                 }
             }, {
                 runOnUiThread {
