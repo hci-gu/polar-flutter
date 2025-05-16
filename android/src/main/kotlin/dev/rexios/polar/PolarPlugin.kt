@@ -343,7 +343,7 @@ class PolarPlugin :
         val dataKey = PolarDeviceDataType.ACC
 
         wrapper.api
-            .requestRecordingStatus(identifier)
+            .getOfflineRecordingStatus(identifier)
             .subscribe({
                 runOnUiThread {
                     result.success(listOf(it[dataKey]))
